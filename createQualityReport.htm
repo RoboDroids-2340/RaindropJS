@@ -1,0 +1,17 @@
+  <h1>Create Water Quality Report</h1>
+
+  <form id="form">
+  <p>Water Condition</p>
+  <input type="radio" name="watercondition" value="Safe"> Safe<br>
+  <input type="radio" name="watercondition" value="Well"> Treatable<br>
+  <input type="radio" name="watercondition" value="Unsafe"> Unsafe<br>
+  <p>Numerical results</p>
+  <input type="text" placeholder="Virus PPM" size="25" id="virusppm"><br>
+  <input type="text" placeholder="Contaminant PPM" size="25" id="contaminantppm"><br>
+  <p>Location</p>
+  <input type="text" placeholder="Latitude" size="25" id="latitude"><br>
+  <input type="text" placeholder="Longitude" size="25" id="longitude"><br>
+  </form>
+  <p>
+  <button onclick="submitQualityReport()">Submit</button>
+  <button onclick="goToMain()">Cancel</button></p>

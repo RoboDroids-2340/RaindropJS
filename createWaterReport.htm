@@ -1,0 +1,23 @@
+
+  <h1>Create Water Report</h1>
+
+  <form id="form">
+  <p>Water Type</p>
+  <input type="radio" name="watertype" value="Bottled"> Bottled<br>
+  <input type="radio" name="watertype" value="Well"> Well<br>
+  <input type="radio" name="watertype" value="Stream"> Stream<br>
+  <input type="radio" name="watertype" value="Lake"> Lake<br>
+  <input type="radio" name="watertype" value="Spring"> Spring<br>
+  <input type="radio" name="watertype" value="Other"> Other<br>
+  <p>Water Condition</p>
+  <input type="radio" name="watercondition" value="Waste"> Waste<br>
+  <input type="radio" name="watercondition" value="Treatable-Clear"> Treatable-Clear<br>
+  <input type="radio" name="watercondition" value="Treatable-Muddy"> Treatable-Muddy<br>
+  <input type="radio" name="watercondition" value="Potable"> Potable<br>
+  <p>Location</p>
+  <input type="text" placeholder="Latitude" size="25" id="latitude"><br>
+  <input type="text" placeholder="Longitude" size="25" id="longitude"><br>
+  </form>
+  <p>
+  <button onclick="submitWaterReport()">Submit</button>
+  <button onclick="goToMain()">Cancel</button></p>

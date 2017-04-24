@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Raindrop</title>
+  <style>
+    h1, p, form, table {
+      text-align: center;
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/3.8.0/firebase.js"></script>
+  <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyDrpb5b3EOjgQ7reJqpRFLozAqlwDgdkFY",
+      authDomain: "raindrop-3c2ba.firebaseapp.com",
+      databaseURL: "https://raindrop-3c2ba.firebaseio.com",
+      projectId: "raindrop-3c2ba",
+      storageBucket: "raindrop-3c2ba.appspot.com",
+      messagingSenderId: "1045329521182"
+    };
+    firebase.initializeApp(config);
+    var username;
+    var usertype;
+    var personName;
+    $(document).ready(function() {
+      goToStart();
+    });
+    function login() {
+      var email = $('#email').val().replace(".", ",");
+      var password = $('#password').val();
+      userref = firebase.database().ref('users/' + email).once('value').then(function(snapshot) {
+        if (snapshot.val()) { // if val != null
+          var correctPass = snapshot.val().pass;
+          if (password == correctPass) {
+            username = email;
+            usertype = snapshot.val().type;
+            personName = snapshot.val().name;
+            goToMain();
+          } else {
+            alert("Incorrect password!");
+          }
+        } else {
+          alert("Could not find username!");
+        }
+      });
+    }
+    function register() {
+      var usertype = $('input[name=usertype]:checked').val();
+      var email = $('#email').val().replace(".", ",");
+      var password = $('#password').val();
+      var personName = $('#name').val();
+      if (usertype && email != '' && password != '' && personName != '') {
+        userref = firebase.database().ref('users/' + email).set({
+          name: personName,
+          pass: password,
+          type: usertype,
+          userid: email
+        });
+        goToLogin();
+      } else {
+        alert("Must provide valid login info");
+      }
+    }
+    function submitEdit() {
+      var password = $('#password').val();
+      var personName = $('#name').val();
+      if (password != '') {
+          userref = firebase.database().ref('users/' + username + '/pass').set(password);
+        if (personName != '') {
+          userref = firebase.database().ref('users/' + username + '/name').set(personName);
+        }
+        goToMain();
+      }
+    }
+    function goToStart() {
+      $("body").load("start.htm");
+    }
+    function goToLogin() {
+      $("body").load("login.htm");
+    }
+    function goToRegister() {
+      $("body").load("register.htm");
+    }
+    function goToMain() {
+      $("body").load("main.htm");
+    }
+    function goToEdit() {
+      $("body").load("edit.htm");
+    }
+    function createWaterReport() {
+      $("body").load("createWaterReport.htm");
+    }
+    function submitWaterReport() {
+      var watertype = $('input[name=watertype]:checked').val();
+      var watercondition = $('input[name=watercondition]:checked').val();
+      var latitude = parseFloat($('#latitude').val());
+      var longitude = parseFloat($('#longitude').val());
+      if (watertype && watercondition && latitude != '' && longitude != '') {
+        var milliseconds = new Date().getTime();
+        firebase.database().ref('num_water_reports').once('value').then(function(response) {
+          var numWaterReports = response.val();
+          numWaterReports++;
+          firebase.database().ref('num_water_reports').set(numWaterReports);
+          firebase.database().ref('water_reports').child(numWaterReports).set({
+            lat: latitude,
+            lon: longitude,
+            reportNumber: numWaterReports,
+            submissionTime: milliseconds,
+            waterCondition: watercondition,
+            waterType: watertype,
+            reporterName: username
+          });
+        });
+        goToStart();
+      } else {
+        alert("Must provide valid info");
+      }
+    }
+    function createQualityReport() {
+      if (usertype == "User") {
+        alert("You do not have premission to do that!");
+      } else {
+        $("body").load("createQualityReport.htm");
+      }
+    }
+    function submitQualityReport() {
+      var watercondition = $('input[name=watercondition]:checked').val();
+      var virusppm = parseFloat($('#virusppm').val());
+      var contaminantppm = parseFloat($('#contaminantppm').val());
+      var latitude = parseFloat($('#latitude').val());
+      var longitude = parseFloat($('#longitude').val());
+      if (watercondition && latitude != '' && longitude != '') {
+        var milliseconds = new Date().getTime();
+        firebase.database().ref('num_quality_reports').once('value').then(function(response) {
+          var numQualityReports = response.val();
+          numQualityReports++;
+          firebase.database().ref('num_quality_reports').set(numQualityReports);
+          firebase.database().ref('quality_reports').child(numQualityReports).set({
+            lat: latitude,
+            lon: longitude,
+            reportNumber: numQualityReports,
+            submissionTime: milliseconds,
+            waterCondition: watercondition,
+            virusPPM: virusppm,
+            contaminantPPM: contaminantppm,
+            reporterName: username
+          });
+        });
+        goToStart();
+      } else {
+        alert("Must provide valid info");
+      }
+    }
+    function viewWaterReports() {
+      $("body").load("viewWaterReports.htm");
+      firebase.database().ref('water_reports').once('value').then(function(response) {
+        var table = '';
+        var reports = response.val();
+        Object.keys(reports).forEach(function (key) {
+          table += '<tr>';
+          var report = reports[key];
+          table += '<td>' + report['reportNumber'] + '</td>';
+          table += '<td>' + report['lat'] + '</td>';
+          table += '<td>' + report['lon'] + '</td>';
+          table += '<td>' + report['waterCondition'] + '</td>';
+          table += '<td>' + report['waterType'] + '</td>';
+          table += '<td>' + report['reporterName'] + '</td>';
+          table += '<td>' + (new Date(parseInt(report['submissionTime']))) + '</td>';
+          table += '</tr>';
+        });
+        $('tbody').html(table);
+      });
+    }
+    function viewQualityReports() {
+      $("body").load("viewQualityReports.htm");
+      firebase.database().ref('quality_reports').once('value').then(function(response) {
+        var table = '';
+        var reports = response.val();
+        Object.keys(reports).forEach(function (key) {
+          table += '<tr>';
+          var report = reports[key];
+          table += '<td>' + report['reportNumber'] + '</td>';
+          table += '<td>' + report['lat'] + '</td>';
+          table += '<td>' + report['lon'] + '</td>';
+          table += '<td>' + report['waterCondition'] + '</td>';
+          table += '<td>' + report['contaminantPPM'] + '</td>';
+          table += '<td>' + report['virusPPM'] + '</td>';
+          table += '<td>' + report['reporterName'] + '</td>';
+          table += '<td>' + (new Date(parseInt(report['submissionTime']))) + '</td>';
+          table += '</tr>';
+        });
+        $('tbody').html(table);
+      });
+    }
+    function viewMap() {
+      $("body").load("viewMap.htm");
+    }
+    function viewHistoricalReport() {
+      if (usertype == "User" || usertype == "Manager") {
+        alert("You do not have premission to do that!");
+      } else {
+        $("body").load("viewHistoricalReport.htm");
+      }
+    }
+  </script>
+</head>
+<body>
+If this is seen, there has been a network error.
+</body>
+</html>

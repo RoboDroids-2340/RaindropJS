@@ -1,4 +1,13 @@
-<p>To be done, if needed</p>
+<div id="chart_div"></div>
+<form>
+  <input type="text" placeholder="Latitude" size="25" id="latitude"><br>
+  <input type="text" placeholder="Longitude" size="25" id="longitude"><br>
+  <input type="text" placeholder="Year" size="25" id="year"><br>
+  <p>Report type</p>
+  <input type="radio" name="reporttype" value="Contaminant"> Contaminant PPM<br>
+  <input type="radio" name="reporttype" value="Virus"> Virus PPM<br>
+</form>
 <p>
+  <button onclick="showHistoricalReport()">Display</button>
   <button onclick="goToMain()">Back</button>
 </p>

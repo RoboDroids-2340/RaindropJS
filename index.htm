@@ -3,12 +3,33 @@
 <head>
   <title>Raindrop</title>
   <style>
+    body {
+      background-color: pink;
+    }
     h1, p, form, table {
       text-align: center;
+    }
+    #map {
+      height: 400px;
+      width: 900px;
+    }
+    #content {
+      border: 2px solid;
+      width: 900px;
+      margin: 0 auto;
+      background-color: LightGrey;
+      font-family: sans-serif;
+    }
+    button {
+      margin: 5px;
     }
   </style>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/3.8.0/firebase.js"></script>
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC46JmgIq7DWuspDskvN9rIwCVkJdgx4hE">
+    </script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   <script>
     // Initialize Firebase
     var config = {
@@ -25,6 +46,7 @@
     var personName;
     $(document).ready(function() {
       goToStart();
+      google.charts.load('current', {packages: ['corechart', 'line']});
     });
     function login() {
       var email = $('#email').val().replace(".", ",");
@@ -74,22 +96,22 @@
       }
     }
     function goToStart() {
-      $("body").load("start.htm");
+      $("#content").load("start.htm");
     }
     function goToLogin() {
-      $("body").load("login.htm");
+      $("#content").load("login.htm");
     }
     function goToRegister() {
-      $("body").load("register.htm");
+      $("#content").load("register.htm");
     }
     function goToMain() {
-      $("body").load("main.htm");
+      $("#content").load("main.htm");
     }
     function goToEdit() {
-      $("body").load("edit.htm");
+      $("#content").load("edit.htm");
     }
     function createWaterReport() {
-      $("body").load("createWaterReport.htm");
+      $("#content").load("createWaterReport.htm");
     }
     function submitWaterReport() {
       var watertype = $('input[name=watertype]:checked').val();
@@ -97,7 +119,7 @@
       var latitude = parseFloat($('#latitude').val());
       var longitude = parseFloat($('#longitude').val());
       if (watertype && watercondition && latitude != '' && longitude != '') {
-        var milliseconds = new Date().getTime();
+        var milliseconds = new Date().getTime().toString();
         firebase.database().ref('num_water_reports').once('value').then(function(response) {
           var numWaterReports = response.val();
           numWaterReports++;
@@ -121,7 +143,7 @@
       if (usertype == "User") {
         alert("You do not have premission to do that!");
       } else {
-        $("body").load("createQualityReport.htm");
+        $("#content").load("createQualityReport.htm");
       }
     }
     function submitQualityReport() {
@@ -131,7 +153,7 @@
       var latitude = parseFloat($('#latitude').val());
       var longitude = parseFloat($('#longitude').val());
       if (watercondition && latitude != '' && longitude != '') {
-        var milliseconds = new Date().getTime();
+        var milliseconds = new Date().getTime().toString();
         firebase.database().ref('num_quality_reports').once('value').then(function(response) {
           var numQualityReports = response.val();
           numQualityReports++;
@@ -153,7 +175,7 @@
       }
     }
     function viewWaterReports() {
-      $("body").load("viewWaterReports.htm");
+      $("#content").load("viewWaterReports.htm");
       firebase.database().ref('water_reports').once('value').then(function(response) {
         var table = '';
         var reports = response.val();
@@ -173,7 +195,7 @@
       });
     }
     function viewQualityReports() {
-      $("body").load("viewQualityReports.htm");
+      $("#content").load("viewQualityReports.htm");
       firebase.database().ref('quality_reports').once('value').then(function(response) {
         var table = '';
         var reports = response.val();
@@ -194,18 +216,74 @@
       });
     }
     function viewMap() {
-      $("body").load("viewMap.htm");
+      $("#content").load("viewMap.htm", function() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 2,
+          center: {lat: 0, lng: 0}
+        });
+        firebase.database().ref('quality_reports').once('value').then(function(response) {
+          var reports = response.val();
+          Object.keys(reports).forEach(function (key) {
+            var report = reports[key];
+            new google.maps.Marker({
+              position: {lat: report['lat'], lng: report['lon']},
+              map: map
+            });
+          });
+        });
+      });
     }
     function viewHistoricalReport() {
-      if (usertype == "User" || usertype == "Manager") {
+      if (usertype == "User" || usertype == "Worker") {
         alert("You do not have premission to do that!");
       } else {
-        $("body").load("viewHistoricalReport.htm");
+        $("#content").load("viewHistoricalReport.htm");
       }
+    }
+    function showHistoricalReport() {
+      var data = new google.visualization.DataTable();
+      data.addColumn('number', 'X');
+      data.addColumn('number', 'PPM');
+      var lat = parseFloat($('#latitude').val());
+      var lon = parseFloat($('#longitude').val());
+      var year = parseFloat($('#year').val());
+      var type = $('input[name=reporttype]:checked').val();
+      var ppms = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+      var elementcounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      firebase.database().ref('quality_reports').once('value').then(function(response) {
+        var reports = response.val();
+        Object.keys(reports).forEach(function (key) {
+          var report = reports[key];
+          var date = new Date(parseInt(report['submissionTime']));
+          if (report['lat'] == lat && report['lon'] == lon
+              && date.getFullYear() == year) {
+            var month = date.getMonth();
+            var ppm = report[(type == "Contaminant" ? 'contaminantPPM' : 'virusPPM')];
+            ppms[month] = (ppms[month] * elementcounts[month] + ppm) / (elementcounts[month] + 1);
+            elementcounts[month]++;
+          }
+        });
+        for (var i = 0; i < 12; i++) {
+          data.addRow([i + 1, ppms[i]]);
+        }
+        //console.log(data.toJSON());
+        var options = {
+          hAxis: {
+            title: 'Month'
+          },
+          vAxis: {
+            title: 'PPM'
+          }
+        };
+        var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      });
     }
   </script>
 </head>
 <body>
-If this is seen, there has been a network error.
+  <div id="content">
+    If this is seen, there has been a network error.
+  </div>
 </body>
 </html>
